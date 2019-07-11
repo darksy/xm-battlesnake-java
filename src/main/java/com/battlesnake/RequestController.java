@@ -41,14 +41,23 @@ public class RequestController {
         Snake mySnake = findOurSnake(request); // kind of handy to have our snake at this level
         
         List<MoveChoice> foodMoveChoices = moveTowardsFood(request, mySnake.getCoords()[0]);
+        Move wantedMove = Move.DOWN;
+        for(MoveChoice choice : foodMoveChoices) {
+            if (!willDie(request, nextMoveCoordinates(mySnake.getCoords()[0], choice.move))) {
+                wantedMove = choice.move;
+                break;
+            }
+        }
 
         if (foodMoveChoices != null && !foodMoveChoices.isEmpty()) {
             System.out.println("Current: " + printXY(mySnake.getCoords()[0]));
-            System.out.println("Next:" + printXY(nextMoveCoordinates(mySnake.getCoords()[0], foodMoveChoices.get(0).move)));
-            return moveResponse.setMove(foodMoveChoices.get(0).move).setTaunt("I'm hungry");
+            System.out.println("Next: " + printXY(nextMoveCoordinates(mySnake.getCoords()[0], wantedMove)));
+            System.out.println("Will die: " + willDie(request, nextMoveCoordinates(mySnake.getCoords()[0], wantedMove)));
+            return moveResponse.setMove(wantedMove).setTaunt("I'm hungry");
         } else {
             System.out.println("Current: " + printXY(mySnake.getCoords()[0]));
-            System.out.println("Next:" + printXY(nextMoveCoordinates(mySnake.getCoords()[0], foodMoveChoices.get(0).move)));
+            System.out.println("Next:" + printXY(nextMoveCoordinates(mySnake.getCoords()[0], wantedMove)));
+            System.out.println("Will die: " + willDie(request, nextMoveCoordinates(mySnake.getCoords()[0], wantedMove)));
             return moveResponse.setMove(Move.DOWN).setTaunt("Oh Drat");
         }
     }
