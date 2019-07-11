@@ -126,6 +126,10 @@ public class RequestController {
         return newXY;
     }
 
+    public boolean willDie(MoveRequest moveRequest, int[] XY) {
+
+    }
+
     public String printXY(int[] XY) {
         return "(" + Integer.toString(XY[0]) + ", " + Integer.toString(XY[1]) + ")";
     }
