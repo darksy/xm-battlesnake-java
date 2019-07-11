@@ -26,25 +26,30 @@ public class RequestController {
     @RequestMapping(value="/start", method=RequestMethod.POST, produces="application/json")
     public StartResponse start(@RequestBody StartRequest request) {
         return new StartResponse()
-                .setName("Simple Snake")
+                .setName("radiant6")
                 .setColor("#FF3497")
                 .setHeadUrl("http://vignette1.wikia.nocookie.net/nintendo/images/6/61/Bowser_Icon.png/revision/latest?cb=20120820000805&path-prefix=en")
                 .setHeadType(HeadType.DEAD)
                 .setTailType(TailType.PIXEL)
-                .setTaunt("I can find food!");
+                .setTaunt("I can find food, I think!");
     }
 
     @RequestMapping(value="/move", method=RequestMethod.POST, produces = "application/json")
     public MoveResponse move(@RequestBody MoveRequest request) {
+        System.out.println("here");
         MoveResponse moveResponse = new MoveResponse();
         
         Snake mySnake = findOurSnake(request); // kind of handy to have our snake at this level
         
         List<Move> towardsFoodMoves = moveTowardsFood(request, mySnake.getCoords()[0]);
-        
+
         if (towardsFoodMoves != null && !towardsFoodMoves.isEmpty()) {
+            System.out.println("Current: " + printXY(mySnake.getCoords()[0]));
+            System.out.println("Next:" + printXY(nextMoveCoordinates(mySnake.getCoords()[0], towardsFoodMoves.get(0))));
             return moveResponse.setMove(towardsFoodMoves.get(0)).setTaunt("I'm hungry");
         } else {
+            System.out.println("Current: " + printXY(mySnake.getCoords()[0]));
+            System.out.println("Next:" + printXY(nextMoveCoordinates(mySnake.getCoords()[0], towardsFoodMoves.get(0))));
             return moveResponse.setMove(Move.DOWN).setTaunt("Oh Drat");
         }
     }
@@ -100,4 +105,28 @@ public class RequestController {
         return towardsFoodMoves;
     }
 
+    public int[] nextMoveCoordinates(int[] currentXY, Move move) {
+        int[] newXY = new int[2];
+        newXY[0] = currentXY[0];
+        newXY[1] = currentXY[1];
+        switch (move) {
+            case UP:
+                newXY[1] = newXY[1] + 1;
+                break;
+            case DOWN:
+                newXY[1] = newXY[1] - 1;
+                break;
+            case LEFT:
+                newXY[0] = newXY[0] - 1;
+                break;
+            case RIGHT:
+                newXY[0] = newXY[0] + 1;
+                break;
+        }
+        return newXY;
+    }
+
+    public String printXY(int[] XY) {
+        return "(" + Integer.toString(XY[0]) + ", " + Integer.toString(XY[1]) + ")";
+    }
 }
