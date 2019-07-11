@@ -40,17 +40,15 @@ public class RequestController {
         
         Snake mySnake = findOurSnake(request); // kind of handy to have our snake at this level
         
-        List<Move> towardsFoodMoves = moveTowardsFood(request, mySnake.getCoords()[0]);
+        List<MoveChoice> foodMoveChoices = moveTowardsFood(request, mySnake.getCoords()[0]);
 
-        if (towardsFoodMoves != null && !towardsFoodMoves.isEmpty()) {
+        if (foodMoveChoices != null && !foodMoveChoices.isEmpty()) {
             System.out.println("Current: " + printXY(mySnake.getCoords()[0]));
-            System.out.println("Next:" + printXY(nextMoveCoordinates(mySnake.getCoords()[0], towardsFoodMoves.get(0))));
-            System.out.println("Will die: " + Boolean.toString(willDie(request, nextMoveCoordinates(mySnake.getCoords()[0], towardsFoodMoves.get(0)))));
-            return moveResponse.setMove(towardsFoodMoves.get(0)).setTaunt("I'm hungry");
+            System.out.println("Next:" + printXY(nextMoveCoordinates(mySnake.getCoords()[0], foodMoveChoices.get(0).move)));
+            return moveResponse.setMove(foodMoveChoices.get(0).move).setTaunt("I'm hungry");
         } else {
             System.out.println("Current: " + printXY(mySnake.getCoords()[0]));
-            System.out.println("Next:" + printXY(nextMoveCoordinates(mySnake.getCoords()[0], towardsFoodMoves.get(0))));
-            System.out.println("Will die: " + Boolean.toString(willDie(request, nextMoveCoordinates(mySnake.getCoords()[0], towardsFoodMoves.get(0)))));
+            System.out.println("Next:" + printXY(nextMoveCoordinates(mySnake.getCoords()[0], foodMoveChoices.get(0).move)));
             return moveResponse.setMove(Move.DOWN).setTaunt("Oh Drat");
         }
     }
@@ -74,6 +72,21 @@ public class RequestController {
         return snakes.stream().filter(thisSnake -> thisSnake.getId().equals(myUuid)).findFirst().orElse(null);
     }
 
+    private class MoveChoice implements Comparable<MoveChoice> {
+        public Move move;
+        public int xdelta;
+        public int ydelta;
+        public int distance;
+        public MoveChoice(Move move, int xdelta, int ydelta) {
+            this.move = move;
+            this.xdelta = xdelta;
+            this.ydelta = ydelta;
+            this.distance = xdelta * xdelta + ydelta * ydelta;
+        }
+        public int compareTo(final MoveChoice other) {
+            return Integer.compare(this.distance, other.distance);
+        }
+    }
 
     /*
      *  Simple algorithm to find food
@@ -82,28 +95,21 @@ public class RequestController {
      *  @param  request An integer array with the X,Y coordinates of your snake's head
      *  @return         A Move that gets you closer to food
      */    
-    public ArrayList<Move> moveTowardsFood(MoveRequest request, int[] mySnakeHead) {
-        ArrayList<Move> towardsFoodMoves = new ArrayList<>();
-
+    public ArrayList<MoveChoice> moveTowardsFood(MoveRequest request, int[] mySnakeHead) {
         int[] firstFoodLocation = request.getFood()[0];
+        int xdelta = firstFoodLocation[0] - mySnakeHead[0];
+        int ydelta = firstFoodLocation[1] - mySnakeHead[1];
 
-        if (firstFoodLocation[0] < mySnakeHead[0]) {
-            towardsFoodMoves.add(Move.LEFT);
-        }
+        ArrayList<MoveChoice> choices = new ArrayList<>();
+        choices.add(new MoveChoice(Move.LEFT, xdelta + 1, ydelta));
+        choices.add(new MoveChoice(Move.RIGHT, xdelta - 1, ydelta));
+        choices.add(new MoveChoice(Move.UP, xdelta, ydelta + 1));
+        choices.add(new MoveChoice(Move.DOWN, xdelta, ydelta - 1));
 
-        if (firstFoodLocation[0] > mySnakeHead[0]) {
-            towardsFoodMoves.add(Move.RIGHT);
-        }
 
-        if (firstFoodLocation[1] < mySnakeHead[1]) {
-            towardsFoodMoves.add(Move.UP);
-        }
+        Collections.sort(choices);
 
-        if (firstFoodLocation[1] > mySnakeHead[1]) {
-            towardsFoodMoves.add(Move.DOWN);
-        }
-
-        return towardsFoodMoves;
+        return choices;
     }
 
     public int[] nextMoveCoordinates(int[] currentXY, Move move) {
