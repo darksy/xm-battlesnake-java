@@ -39,27 +39,26 @@ public class RequestController {
         MoveResponse moveResponse = new MoveResponse();
         
         Snake mySnake = findOurSnake(request); // kind of handy to have our snake at this level
-        
-        List<MoveChoice> foodMoveChoices = moveTowardsFood(request, mySnake.getCoords()[0]);
-        Move wantedMove = Move.DOWN;
-        for(MoveChoice choice : foodMoveChoices) {
-            if (!willDie(request, nextMoveCoordinates(mySnake.getCoords()[0], choice.move))) {
-                wantedMove = choice.move;
-                break;
+        Snake otherSnake = null;
+        for(Snake s : request.getSnakes()) {
+            if (!s.getId().equals(mySnake.getId())) {
+                otherSnake = s;
             }
         }
 
-        if (foodMoveChoices != null && !foodMoveChoices.isEmpty()) {
-            System.out.println("Current: " + printXY(mySnake.getCoords()[0]));
-            System.out.println("Next: " + printXY(nextMoveCoordinates(mySnake.getCoords()[0], wantedMove)));
-            System.out.println("Will die: " + willDie(request, nextMoveCoordinates(mySnake.getCoords()[0], wantedMove)));
-            return moveResponse.setMove(wantedMove).setTaunt("I'm hungry");
-        } else {
-            System.out.println("Current: " + printXY(mySnake.getCoords()[0]));
-            System.out.println("Next:" + printXY(nextMoveCoordinates(mySnake.getCoords()[0], wantedMove)));
-            System.out.println("Will die: " + willDie(request, nextMoveCoordinates(mySnake.getCoords()[0], wantedMove)));
-            return moveResponse.setMove(Move.DOWN).setTaunt("Oh Drat");
+        Move wantedMove = findNextMove(mySnake, request, request.getFood()[0]);
+        Move otherSnakeWantedMove = findNextMove(otherSnake, request, request.getFood()[0]);
+
+        int[] snakeFood = nextMoveCoordinates(otherSnake.getCoords()[0], otherSnakeWantedMove);
+        if (SnakeLength.isLonger(mySnake, otherSnake)) {
+            System.out.println("Attack Mode!");
+            wantedMove = findNextMove(mySnake, request, snakeFood);
         }
+
+        System.out.println("Current: " + printXY(mySnake.getCoords()[0]));
+        System.out.println("Next: " + printXY(nextMoveCoordinates(mySnake.getCoords()[0], wantedMove)));
+        System.out.println("Will die: " + willDie(request, nextMoveCoordinates(mySnake.getCoords()[0], wantedMove)));
+        return moveResponse.setMove(wantedMove).setTaunt("I'm hungry");
     }
 
     @RequestMapping(value="/end", method=RequestMethod.POST)
@@ -79,6 +78,18 @@ public class RequestController {
         String myUuid = request.getYou();
         List<Snake> snakes = request.getSnakes();
         return snakes.stream().filter(thisSnake -> thisSnake.getId().equals(myUuid)).findFirst().orElse(null);
+    }
+
+    private Move findNextMove(Snake snake, MoveRequest request, int[] food) {
+        List<MoveChoice> foodMoveChoices = moveTowardsFood(request, snake.getCoords()[0], food);
+        Move wantedMove = Move.DOWN;
+        for(MoveChoice choice : foodMoveChoices) {
+            if (!willDie(request, nextMoveCoordinates(snake.getCoords()[0], choice.move))) {
+                wantedMove = choice.move;
+                break;
+            }
+        }
+        return wantedMove;
     }
 
     private class MoveChoice implements Comparable<MoveChoice> {
@@ -104,8 +115,8 @@ public class RequestController {
      *  @param  request An integer array with the X,Y coordinates of your snake's head
      *  @return         A Move that gets you closer to food
      */    
-    public ArrayList<MoveChoice> moveTowardsFood(MoveRequest request, int[] mySnakeHead) {
-        int[] firstFoodLocation = request.getFood()[0];
+    public ArrayList<MoveChoice> moveTowardsFood(MoveRequest request, int[] mySnakeHead, int[] food) {
+        int[] firstFoodLocation = food;
         int xdelta = firstFoodLocation[0] - mySnakeHead[0];
         int ydelta = firstFoodLocation[1] - mySnakeHead[1];
 
@@ -157,14 +168,7 @@ public class RequestController {
             return true;
         }
 
-        Snake me = findOurSnake(moveRequest);
-
         for (Snake s : moveRequest.getSnakes()) {
-            if (SnakeLength.isLonger(me, s)) {
-                System.out.println("Will not avoid collision with " + s.getName());
-                return false;
-            }
-
             for (int[] blocker : s.getCoords()) {
                 if (blocker[0] == XY[0] && blocker[1] == XY[1]) {
                     System.out.println("Will collide with " + s.getName() + printXY(blocker));
