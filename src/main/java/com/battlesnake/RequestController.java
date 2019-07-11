@@ -156,7 +156,15 @@ public class RequestController {
                 XY[1] > moveRequest.getHeight() -1) {
             return true;
         }
+
+        Snake me = findOurSnake(moveRequest);
+
         for (Snake s : moveRequest.getSnakes()) {
+            if (SnakeLength.isLonger(me, s)) {
+                System.out.println("Will not avoid collision with " + s.getName());
+                return false;
+            }
+
             for (int[] blocker : s.getCoords()) {
                 if (blocker[0] == XY[0] && blocker[1] == XY[1]) {
                     System.out.println("Will collide with " + s.getName() + printXY(blocker));
