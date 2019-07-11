@@ -27,7 +27,7 @@ public class RequestController {
     public StartResponse start(@RequestBody StartRequest request) {
         return new StartResponse()
                 .setName("radiant6")
-                .setColor("#FF3497")
+                .setColor("#FF34FF")
                 .setHeadUrl("http://vignette1.wikia.nocookie.net/nintendo/images/6/61/Bowser_Icon.png/revision/latest?cb=20120820000805&path-prefix=en")
                 .setHeadType(HeadType.DEAD)
                 .setTailType(TailType.PIXEL)
@@ -36,7 +36,6 @@ public class RequestController {
 
     @RequestMapping(value="/move", method=RequestMethod.POST, produces = "application/json")
     public MoveResponse move(@RequestBody MoveRequest request) {
-        System.out.println("here");
         MoveResponse moveResponse = new MoveResponse();
         
         Snake mySnake = findOurSnake(request); // kind of handy to have our snake at this level
@@ -46,17 +45,19 @@ public class RequestController {
         if (towardsFoodMoves != null && !towardsFoodMoves.isEmpty()) {
             System.out.println("Current: " + printXY(mySnake.getCoords()[0]));
             System.out.println("Next:" + printXY(nextMoveCoordinates(mySnake.getCoords()[0], towardsFoodMoves.get(0))));
+            System.out.println("Will die: " + Boolean.toString(willDie(request, nextMoveCoordinates(mySnake.getCoords()[0], towardsFoodMoves.get(0)))));
             return moveResponse.setMove(towardsFoodMoves.get(0)).setTaunt("I'm hungry");
         } else {
             System.out.println("Current: " + printXY(mySnake.getCoords()[0]));
             System.out.println("Next:" + printXY(nextMoveCoordinates(mySnake.getCoords()[0], towardsFoodMoves.get(0))));
+            System.out.println("Will die: " + Boolean.toString(willDie(request, nextMoveCoordinates(mySnake.getCoords()[0], towardsFoodMoves.get(0)))));
             return moveResponse.setMove(Move.DOWN).setTaunt("Oh Drat");
         }
     }
 
     @RequestMapping(value="/end", method=RequestMethod.POST)
     public Object end() {
-        // No response required
+        // No response required∂
         Map<String, Object> responseObject = new HashMap<String, Object>();
         return responseObject;
     }
@@ -111,10 +112,10 @@ public class RequestController {
         newXY[1] = currentXY[1];
         switch (move) {
             case UP:
-                newXY[1] = newXY[1] + 1;
+                newXY[1] = newXY[1] - 1;
                 break;
             case DOWN:
-                newXY[1] = newXY[1] - 1;
+                newXY[1] = newXY[1] + 1;
                 break;
             case LEFT:
                 newXY[0] = newXY[0] - 1;
@@ -126,8 +127,29 @@ public class RequestController {
         return newXY;
     }
 
+    /**
+     *
+     * @param moveRequest
+     * @param XY
+     * @return true if XY matches any snake's coordinates
+     */
     public boolean willDie(MoveRequest moveRequest, int[] XY) {
-
+        if (XY[0] < 0 || XY[1] < 0) {
+            return true;
+        }
+        if ((XY[0] > moveRequest.getWidth() - 1) ||
+                XY[1] > moveRequest.getHeight() -1) {
+            return true;
+        }
+        for (Snake s : moveRequest.getSnakes()) {
+            for (int[] blocker : s.getCoords()) {
+                if (blocker[0] == XY[0] && blocker[1] == XY[1]) {
+                    System.out.println("Will collide with " + s.getName() + printXY(blocker));
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public String printXY(int[] XY) {
