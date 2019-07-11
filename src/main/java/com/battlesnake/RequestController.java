@@ -40,25 +40,38 @@ public class RequestController {
         
         Snake mySnake = findOurSnake(request); // kind of handy to have our snake at this level
         Snake otherSnake = null;
+        String taunt = "I'm hungry";
         for(Snake s : request.getSnakes()) {
             if (!s.getId().equals(mySnake.getId())) {
                 otherSnake = s;
             }
         }
 
-        Move wantedMove = findNextMove(mySnake, request, request.getFood()[0]);
-        Move otherSnakeWantedMove = findNextMove(otherSnake, request, request.getFood()[0]);
+        int[] food = request.getFood()[0];
+        int[] myHead = mySnake.getCoords()[0];
+        Move wantedMove = findNextMove(mySnake, request, food);
+        Move otherSnakeWantedMove = findNextMove(otherSnake, request, food);
 
-        int[] snakeFood = nextMoveCoordinates(otherSnake.getCoords()[0], otherSnakeWantedMove);
-        if (SnakeLength.isLonger(mySnake, otherSnake)) {
+        int[] snakePrey = nextMoveCoordinates(otherSnake.getCoords()[0], otherSnakeWantedMove);
+
+        if ((dist(myHead, snakePrey) <= dist(myHead, food)) && SnakeLength.isLonger(mySnake, otherSnake)) {
             System.out.println("Attack Mode!");
-            wantedMove = findNextMove(mySnake, request, snakeFood);
+            taunt = "Atttack!";
+            wantedMove = findNextMove(mySnake, request, snakePrey);
+        } else {
+            taunt = "Mmm, donuts...";
         }
 
         System.out.println("Current: " + printXY(mySnake.getCoords()[0]));
         System.out.println("Next: " + printXY(nextMoveCoordinates(mySnake.getCoords()[0], wantedMove)));
         System.out.println("Will die: " + willDie(request, nextMoveCoordinates(mySnake.getCoords()[0], wantedMove)));
-        return moveResponse.setMove(wantedMove).setTaunt("I'm hungry");
+        return moveResponse.setMove(wantedMove).setTaunt(taunt);
+    }
+
+    public int dist(int[] first, int[] second) {
+        int dx = second[0] - first[0];
+        int dy = second[1] - first[1];
+        return dx * dx + dy * dy;
     }
 
     @RequestMapping(value="/end", method=RequestMethod.POST)
