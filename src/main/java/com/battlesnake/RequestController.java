@@ -26,9 +26,9 @@ public class RequestController {
     @RequestMapping(value="/start", method=RequestMethod.POST, produces="application/json")
     public StartResponse start(@RequestBody StartRequest request) {
         return new StartResponse()
-                .setName("radiant6")
-                .setColor("#FF34FF")
-                .setHeadUrl("http://vignette1.wikia.nocookie.net/nintendo/images/6/61/Bowser_Icon.png/revision/latest?cb=20120820000805&path-prefix=en")
+                .setName("radiant6, I love snacks")
+                .setColor("#25da3d")
+                .setHeadUrl("https://i.redd.it/6auki8gjsgw01.jpg")
                 .setHeadType(HeadType.DEAD)
                 .setTailType(TailType.PIXEL)
                 .setTaunt("I can find food, I think!");
